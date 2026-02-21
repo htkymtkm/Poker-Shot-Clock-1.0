@@ -45,6 +45,19 @@
     justify-content: center;
   }
 
+  @media (orientation: landscape) {
+    .ring-wrap {
+      width: min(88vh, 88svh);
+    }
+    #timeDisplay {
+      font-size: clamp(5rem, 28vh, 18rem);
+    }
+    #phaseLabel {
+      font-size: clamp(0.7rem, 2.5vh, 1.2rem);
+      margin-top: 6px;
+    }
+  }
+
   .ring-svg {
     position: absolute;
     inset: 0;
