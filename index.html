@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SHOT CLOCK">
+<title>SHOT CLOCK</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; -webkit-user-select: none; user-select: none; }
+
+  body {
+    background: #0b1120;
+    min-height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    user-select: none;
+    touch-action: manipulation;
+    font-family: 'Bebas Neue', sans-serif;
+  }
+
+  #tapArea {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+  }
+
+  .ring-wrap {
+    position: relative;
+    width: min(90vw, 84vh);
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .ring-svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+  }
+
+  .ring-bg {
+    fill: none;
+    stroke: #1a2540;
+    stroke-width: 8;
+  }
+
+  .ring-fg {
+    fill: none;
+    stroke: #3af07a;
+    stroke-width: 8;
+    stroke-linecap: butt;
+    transition: stroke-dashoffset 1s linear, stroke 0.5s ease;
+  }
+
+  .ring-inner {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 82%;
+    aspect-ratio: 1;
+  }
+
+  #timeDisplay {
+    font-size: clamp(10rem, 40vw, 28rem);
+    line-height: 0.82;
+    color: #eef2ff;
+    transition: color 0.3s;
+    text-align: center;
+    letter-spacing: -0.03em;
+  }
+
+  #timeDisplay.blink {
+    animation: blink 0.5s ease-in-out infinite;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.35; }
+  }
+
+  #phaseLabel {
+    font-size: clamp(0.85rem, 3.2vw, 1.5rem);
+    letter-spacing: 0.45em;
+    color: rgba(200, 215, 255, 0.3);
+    margin-top: 12px;
+    transition: color 0.4s;
+    text-align: center;
+  }
+
+  #hint {
+    position: fixed;
+    bottom: max(22px, env(safe-area-inset-bottom, 18px));
+    font-size: clamp(0.6rem, 1.8vw, 0.8rem);
+    letter-spacing: 0.3em;
+    color: rgba(180, 200, 255, 0.12);
+    text-align: center;
+    pointer-events: none;
+  }
+
+  #flash {
+    position: fixed;
+    inset: 0;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.08s;
+    z-index: 99;
+  }
+</style>
+</head>
+<body>
+
+<div id="flash"></div>
+
+<div id="tapArea">
+  <div class="ring-wrap">
+    <svg class="ring-svg" viewBox="0 0 200 200">
+      <circle class="ring-bg" cx="100" cy="100" r="88"/>
+      <circle class="ring-fg" id="ring" cx="100" cy="100" r="88"
+        stroke-dasharray="553" stroke-dashoffset="0"/>
+    </svg>
+    <div class="ring-inner">
+      <div id="timeDisplay">30</div>
+      <div id="phaseLabel">TAP TO START</div>
+    </div>
+  </div>
+</div>
+
+<div id="hint">TAP = START · RESTART &nbsp;|&nbsp; LONG PRESS = PAUSE</div>
+
+<script>
+  const SHOT = 30;
+  const CIRC = 553;
+
+  // phase 0=normal, 1+=bank (color caps at index 3)
+  const COLORS = ['#3af07a', '#f9c31a', '#f9c31a', '#f9c31a'];
+
+  let remaining = SHOT;
+  let phase = 0;
+  let running = false;
+  let ticker = null;
+  let transitioning = false;
+
+  // Audio
+  let actx = null;
+  function ctx() { return actx || (actx = new (window.AudioContext || window.webkitAudioContext)()); }
+  function tone(freq, dur, vol=0.3, type='sine') {
+    try {
+      const c=ctx(), o=c.createOscillator(), g=c.createGain();
+      o.type=type; o.frequency.value=freq;
+      o.connect(g); g.connect(c.destination);
+      g.gain.setValueAtTime(vol,c.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.0001,c.currentTime+dur);
+      o.start(); o.stop(c.currentTime+dur);
+    } catch(e){}
+  }
+  function sndStart() { tone(480,0.09,0.22); }
+  function sndWarn()  { tone(540,0.07,0.18); }
+  function sndBank()  { tone(680,0.1,0.3); setTimeout(()=>tone(900,0.2,0.38),130); }
+
+  function doFlash(color, alpha=0.35) {
+    const f = document.getElementById('flash');
+    f.style.background = color;
+    f.style.opacity = alpha;
+    setTimeout(() => f.style.opacity = 0, 220);
+  }
+
+  function render() {
+    const color = COLORS[Math.min(phase, 3)];
+    const offset = CIRC * (1 - remaining / SHOT);
+
+    const ring = document.getElementById('ring');
+    ring.style.strokeDashoffset = offset;
+    ring.style.stroke = color;
+
+    const disp = document.getElementById('timeDisplay');
+    disp.textContent = remaining;
+
+    const isDanger = false;
+    disp.style.color = '#eef2ff';
+    disp.className = '';
+
+    const lbl = document.getElementById('phaseLabel');
+    if (!running && phase === 0 && remaining === SHOT) {
+      lbl.textContent = 'TAP TO START';
+      lbl.style.color = 'rgba(200,215,255,0.28)';
+    } else if (!running) {
+      lbl.textContent = 'PAUSED';
+      lbl.style.color = 'rgba(200,215,255,0.28)';
+    } else if (phase === 0) {
+      lbl.textContent = 'SHOT CLOCK';
+      lbl.style.color = color + '70';
+    } else {
+      lbl.textContent = `TIME BANK ×${phase}`;
+      lbl.style.color = color + 'cc';
+    }
+  }
+
+  function startFresh() {
+    if (transitioning) return;
+    // Always restart from top
+    clearInterval(ticker); ticker = null;
+    running = false;
+    remaining = SHOT;
+    phase = 0;
+    document.getElementById('timeDisplay').className = '';
+    render();
+    // Small delay so render updates before audio
+    setTimeout(() => {
+      sndStart();
+      running = true;
+      ticker = setInterval(tick, 1000);
+    }, 20);
+  }
+
+  function pause() {
+    if (!running) return;
+    clearInterval(ticker); ticker = null;
+    running = false;
+    document.getElementById('timeDisplay').className = '';
+    render();
+  }
+
+  function tick() {
+    remaining--;
+    if (remaining <= 5 && remaining > 0) sndWarn();
+    render();
+    if (remaining <= 0) {
+      clearInterval(ticker); ticker = null;
+      running = false;
+      transitioning = true;
+      doFlash(COLORS[Math.min(phase + 1, 3)], 0.45);
+      setTimeout(() => {
+        phase++;
+        remaining = SHOT;
+        transitioning = false;
+        sndBank();
+        render();
+        running = true;
+        ticker = setInterval(tick, 1000);
+      }, 480);
+    }
+  }
+
+  // ---- Input: tap = start/restart, long press = pause ----
+  let holdTimer = null;
+  let longFired = false;
+  const HOLD_MS = 450;
+
+  function onDown(e) {
+    e.preventDefault();
+    longFired = false;
+    holdTimer = setTimeout(() => {
+      longFired = true;
+      pause();
+      navigator.vibrate && navigator.vibrate(25);
+    }, HOLD_MS);
+  }
+
+  function onUp(e) {
+    e.preventDefault();
+    clearTimeout(holdTimer);
+    if (longFired) return;
+    // Short tap → always start fresh
+    startFresh();
+  }
+
+  const area = document.getElementById('tapArea');
+  area.addEventListener('pointerdown', onDown);
+  area.addEventListener('pointerup', onUp);
+  area.addEventListener('pointercancel', () => clearTimeout(holdTimer));
+  area.addEventListener('contextmenu', e => e.preventDefault());
+
+  render();
+</script>
+</body>
+</html>
