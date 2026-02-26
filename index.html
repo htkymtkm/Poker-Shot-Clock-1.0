@@ -21,10 +21,7 @@ justify-content: center;
 overflow: hidden;
 user-select: none;
 touch-action: manipulation;
-font-family: ‘Bebas Neue’, sans-serif;
-}
-
-#tapArea {
+font-family: ‘Bebas Neue’, ‘Helvetica Neue’, Helvetica, sans-serif;
 position: fixed;
 inset: 0;
 display: flex;
@@ -51,7 +48,7 @@ justify-content: center;
 width: min(88vh, 88svh);
 }
 #timeDisplay {
-font-size: clamp(5rem, 34vh, 22rem);
+font-size: clamp(5rem, 30vh, 20rem);
 }
 #phaseLabel {
 font-size: clamp(0.7rem, 2.5vh, 1.2rem);
@@ -92,13 +89,22 @@ aspect-ratio: 1;
 }
 
 #timeDisplay {
-font-size: clamp(14rem, 62vw, 38rem);
+font-size: clamp(11rem, 50vw, 32rem);
+font-weight: 400;
+font-family: ‘Bebas Neue’, ‘Helvetica Neue’, Helvetica, sans-serif;
 line-height: 1;
 color: #eef2ff;
 transition: color 0.3s;
 text-align: center;
-letter-spacing: -0.03em;
-margin-top: 0.1em;
+letter-spacing: -0.02em;
+margin-top: 0;
+padding-bottom: 0;
+padding-top: 0.12em;
+display: flex;
+align-items: center;
+justify-content: center;
+width: 100%;
+height: 100%;
 }
 
 #timeDisplay.blink {
@@ -112,7 +118,9 @@ animation: blink 0.5s ease-in-out infinite;
 
 #phaseLabel {
 font-size: clamp(1rem, 4vw, 1.8rem);
-letter-spacing: 0.45em;
+font-weight: 400;
+font-family: ‘Bebas Neue’, ‘Helvetica Neue’, Helvetica, sans-serif;
+letter-spacing: 0.35em;
 color: rgba(200, 215, 255, 0.3);
 margin-top: 18px;
 transition: color 0.4s;
