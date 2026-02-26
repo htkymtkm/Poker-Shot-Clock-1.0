@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
@@ -11,131 +12,134 @@
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; -webkit-user-select: none; user-select: none; }
 
-  body {
-    background: #0b1120;
-    min-height: 100dvh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-    user-select: none;
-    touch-action: manipulation;
-    font-family: 'Bebas Neue', sans-serif;
-  }
+body {
+background: #0b1120;
+min-height: 100dvh;
+display: flex;
+align-items: center;
+justify-content: center;
+overflow: hidden;
+user-select: none;
+touch-action: manipulation;
+font-family: ‘Bebas Neue’, sans-serif;
+}
 
-  #tapArea {
-    position: fixed;
-    inset: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    -webkit-user-select: none;
-    user-select: none;
-    -webkit-touch-callout: none;
-  }
+#tapArea {
+position: fixed;
+inset: 0;
+display: flex;
+flex-direction: column;
+align-items: center;
+justify-content: center;
+cursor: pointer;
+-webkit-user-select: none;
+user-select: none;
+-webkit-touch-callout: none;
+}
 
-  .ring-wrap {
-    position: relative;
-    width: min(90vw, 84vh);
-    aspect-ratio: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
+.ring-wrap {
+position: relative;
+width: min(90vw, 84vh);
+aspect-ratio: 1;
+display: flex;
+align-items: center;
+justify-content: center;
+}
 
-  @media (orientation: landscape) {
-    .ring-wrap {
-      width: min(88vh, 88svh);
-    }
-    #timeDisplay {
-      font-size: clamp(5rem, 28vh, 18rem);
-    }
-    #phaseLabel {
-      font-size: clamp(0.7rem, 2.5vh, 1.2rem);
-      margin-top: 6px;
-    }
-  }
+@media (orientation: landscape) {
+.ring-wrap {
+width: min(88vh, 88svh);
+}
+#timeDisplay {
+font-size: clamp(5rem, 34vh, 22rem);
+}
+#phaseLabel {
+font-size: clamp(0.7rem, 2.5vh, 1.2rem);
+margin-top: 10px;
+}
+}
 
-  .ring-svg {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    transform: rotate(-90deg);
-  }
+.ring-svg {
+position: absolute;
+inset: 0;
+width: 100%;
+height: 100%;
+transform: rotate(-90deg) scale(1, -1);
+}
 
-  .ring-bg {
-    fill: none;
-    stroke: #1a2540;
-    stroke-width: 8;
-  }
+.ring-bg {
+fill: none;
+stroke: #1a2540;
+stroke-width: 8;
+}
 
-  .ring-fg {
-    fill: none;
-    stroke: #3af07a;
-    stroke-width: 8;
-    stroke-linecap: butt;
-    transition: stroke-dashoffset 1s linear, stroke 0.5s ease;
-  }
+.ring-fg {
+fill: none;
+stroke: #3af07a;
+stroke-width: 8;
+stroke-linecap: butt;
+transition: stroke-dashoffset 1s linear, stroke 0.5s ease;
+}
 
-  .ring-inner {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    width: 82%;
-    aspect-ratio: 1;
-  }
+.ring-inner {
+position: relative;
+display: flex;
+flex-direction: column;
+align-items: center;
+justify-content: center;
+width: 82%;
+aspect-ratio: 1;
+}
 
-  #timeDisplay {
-    font-size: clamp(12rem, 52vw, 32rem);
-    line-height: 0.82;
-    color: #eef2ff;
-    transition: color 0.3s;
-    text-align: center;
-    letter-spacing: -0.03em;
-  }
+#timeDisplay {
+font-size: clamp(14rem, 62vw, 38rem);
+line-height: 1;
+color: #eef2ff;
+transition: color 0.3s;
+text-align: center;
+letter-spacing: -0.03em;
+margin-top: 0.1em;
+}
 
-  #timeDisplay.blink {
-    animation: blink 0.5s ease-in-out infinite;
-  }
+#timeDisplay.blink {
+animation: blink 0.5s ease-in-out infinite;
+}
 
-  @keyframes blink {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.35; }
-  }
+@keyframes blink {
+0%, 100% { opacity: 1; }
+50% { opacity: 0.35; }
+}
 
-  #phaseLabel {
-    font-size: clamp(0.85rem, 3.2vw, 1.5rem);
-    letter-spacing: 0.45em;
-    color: rgba(200, 215, 255, 0.3);
-    margin-top: 12px;
-    transition: color 0.4s;
-    text-align: center;
-  }
+#phaseLabel {
+font-size: clamp(1rem, 4vw, 1.8rem);
+letter-spacing: 0.45em;
+color: rgba(200, 215, 255, 0.3);
+margin-top: 18px;
+transition: color 0.4s;
+text-align: center;
+pointer-events: none;
+}
 
-  #hint {
-    position: fixed;
-    bottom: max(22px, env(safe-area-inset-bottom, 18px));
-    font-size: clamp(0.6rem, 1.8vw, 0.8rem);
-    letter-spacing: 0.3em;
-    color: rgba(180, 200, 255, 0.12);
-    text-align: center;
-    pointer-events: none;
-  }
+#hint {
+position: fixed;
+bottom: max(22px, env(safe-area-inset-bottom, 18px));
+font-size: clamp(0.6rem, 1.8vw, 0.8rem);
+letter-spacing: 0.3em;
+color: rgba(180, 200, 255, 0.12);
+text-align: center;
+pointer-events: none;
+}
 
-  #flash {
-    position: fixed;
-    inset: 0;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.08s;
-    z-index: 99;
-  }
+#flash {
+position: fixed;
+inset: 0;
+opacity: 0;
+pointer-events: none;
+transition: opacity 0.08s;
+z-index: 99;
+}
 </style>
+
 </head>
 <body>
 
@@ -150,9 +154,9 @@
     </svg>
     <div class="ring-inner">
       <div id="timeDisplay">30</div>
-      <div id="phaseLabel">TAP TO START</div>
     </div>
   </div>
+  <div id="phaseLabel">TAP TO START</div>
 </div>
 
 <div id="hint">TAP = START · RESTART &nbsp;|&nbsp; LONG PRESS = PAUSE</div>
@@ -302,5 +306,6 @@
 
   render();
 </script>
+
 </body>
 </html>
